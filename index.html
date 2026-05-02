@@ -28,6 +28,8 @@
   --red-dim: rgba(247,95,95,0.15);
   --amber: #f5a623;
   --amber-dim: rgba(245,166,35,0.15);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.15);
   --radius: 16px;
   --radius-sm: 10px;
   --tab-h: 76px;
@@ -140,7 +142,7 @@ body {
 .hero-day { font-family: 'DM Mono', monospace; }
 
 .cards {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(2, 1fr);
   gap: 10px; padding: 0 20px 20px;
 }
 .card {
@@ -156,7 +158,7 @@ body {
 .card-amount { font-family: 'DM Mono', monospace; font-size: 15px; font-weight: 400; }
 .card-amount.income { color: var(--green); }
 .card-amount.expense { color: var(--red); }
-.card-amount.save { color: var(--blue); }
+.card-amount.invest { color: var(--purple); }
 .card-icon { margin-top: 10px; font-size: 18px; }
 
 /* section */
@@ -524,6 +526,11 @@ body {
           <div class="card-amount save" id="card-save">$0.00</div>
           <div class="card-icon">🏦</div>
         </div>
+        <div class="card">
+          <div class="card-label">Investing</div>
+          <div class="card-amount invest" id="card-invest">$0.00</div>
+          <div class="card-icon">📈</div>
+        </div>
       </div>
 
       <div class="section">
@@ -593,6 +600,16 @@ body {
               </div>
             </div>
             <input class="save-goal-input" id="save-goal-input" type="text" inputmode="decimal" placeholder="$0.00" onchange="updateSaveGoal(this.value)" onblur="updateSaveGoal(this.value)">
+          </div>
+          <div class="profile-row">
+            <div class="profile-row-left">
+              <div class="profile-row-icon">📈</div>
+              <div>
+                <div class="profile-row-label">Investing Goal</div>
+                <div class="profile-row-sub">Locked off from spendable balance</div>
+              </div>
+            </div>
+            <input class="save-goal-input" id="invest-goal-input" type="text" inputmode="decimal" placeholder="$0.00" onchange="updateInvestGoal(this.value)" onblur="updateInvestGoal(this.value)">
           </div>
           <div class="profile-row">
             <div class="profile-row-left">
@@ -755,6 +772,7 @@ const CATEGORIES = ['Food','Transport','Shopping','Entertainment','Health','Util
 let state = {
   transactions: [],
   saveGoal: 0,
+  investGoal: 0,
   viewMonth: new Date().getMonth(),
   viewYear: new Date().getFullYear(),
 };
@@ -765,6 +783,7 @@ function load() {
     if (d) {
       state.transactions = d.transactions || [];
       state.saveGoal = d.saveGoal || 0;
+      state.investGoal = d.investGoal || 0;
     }
   } catch(e) {}
 }
@@ -772,6 +791,7 @@ function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     transactions: state.transactions,
     saveGoal: state.saveGoal,
+    investGoal: state.investGoal,
   }));
 }
 
@@ -797,7 +817,7 @@ function compute(y, m) {
     if (t.flow === 'income') income += t.amount;
     else expense += t.amount;
   });
-  const remaining = income - expense - state.saveGoal;
+  const remaining = income - expense - state.saveGoal - state.investGoal;
   const today = new Date();
   const isCurrentMonth = (y === today.getFullYear() && m === today.getMonth());
   const totalDays = daysInMonth(y, m);
@@ -823,6 +843,7 @@ function renderHome() {
   document.getElementById('card-income').textContent = fmt(income);
   document.getElementById('card-expense').textContent = fmt(expense);
   document.getElementById('card-save').textContent = fmt(state.saveGoal);
+  document.getElementById('card-invest').textContent = fmt(state.investGoal);
 
   // profile stats
   document.getElementById('p-income').textContent = fmt(income);
@@ -1110,6 +1131,15 @@ function deleteTxFromDetail() {
 }
 
 // ── PROFILE ──
+function updateInvestGoal(val) {
+  const n = parseFloat(val.replace(/[^0-9.]/g,'')) || 0;
+  state.investGoal = n;
+  document.getElementById('invest-goal-input').value = n > 0 ? '$' + n.toFixed(2) : '';
+  save();
+  renderHome();
+  showToast('Investing goal updated', 'success');
+}
+
 function updateSaveGoal(val) {
   const n = parseFloat(val.replace(/[^0-9.]/g,'')) || 0;
   state.saveGoal = n;
@@ -1155,6 +1185,7 @@ state.viewMonth = new Date().getMonth();
 state.viewYear = new Date().getFullYear();
 // savings goal display
 if (state.saveGoal > 0) document.getElementById('save-goal-input').value = '$' + state.saveGoal.toFixed(2);
+if (state.investGoal > 0) document.getElementById('invest-goal-input').value = '$' + state.investGoal.toFixed(2);
 renderHome();
 </script>
 </body>
